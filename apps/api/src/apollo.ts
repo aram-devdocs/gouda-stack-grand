@@ -3,22 +3,37 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 import { Neo4jGraphQL } from '@neo4j/graphql';
 import neo4j from 'neo4j-driver';
 
-// TODO: Replace with your own schema
-const typeDefs = `#graphql
-    type Movie {
-        title: String
-        actors: [Actor!]! @relationship(type: "ACTED_IN", direction: IN)
+const neo4j_driver = process.env.NEO4J_URI;
+const neo4j_user = process.env.NEO4J_USER;
+const neo4j_password = process.env.NEO4J_PASSWORD;
+const apollo_port: number = Number(process.env.PORT) || 4000;
+
+if (!neo4j_driver || !neo4j_user || !neo4j_password) {
+  throw new Error(
+    'Missing Neo4j credentials:' +
+      JSON.stringify({ neo4j_driver, neo4j_user, neo4j_password })
+  );
+}
+
+// TODO: Replace with your own schema, generated from graphql-codegen
+export const typeDefs = `
+    type User {
+        id: ID
+        name: String
     }
 
-    type Actor {
-        name: String
-        movies: [Movie!]! @relationship(type: "ACTED_IN", direction: OUT)
+    type Query {
+        users: [User]
+    }
+
+    type Mutation {
+        createUser(name: String!): User
     }
 `;
 
-const driver = neo4j.driver(
-  'bolt://localhost:7687',
-  neo4j.auth.basic('username', 'password')
+export const driver = neo4j.driver(
+  neo4j_driver,
+  neo4j.auth.basic(neo4j_user, neo4j_password)
 );
 
 const neoSchema = new Neo4jGraphQL({ typeDefs, driver });
@@ -34,6 +49,6 @@ export const getApolloServer = async () => {
 export const getUrlFromStandaloneServer = async (server: ApolloServer) => {
   return await startStandaloneServer(server, {
     context: async ({ req }) => ({ req }),
-    listen: { port: 4000 },
+    listen: { port: apollo_port },
   });
 };

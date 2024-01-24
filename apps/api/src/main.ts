@@ -4,7 +4,9 @@
 import express from 'express';
 import * as path from 'path';
 import { getApolloServer, getUrlFromStandaloneServer } from './apollo';
+import { ogm, User } from './ogm';
 
+// TODO: WIP
 // // TODO: Replace with your own schema
 // const schema = new GraphQLSchema({
 //   query: new GraphQLObjectType({
@@ -26,6 +28,7 @@ app.get('/api', (req, res) => {
   res.send({ message: 'Welcome to api!' });
 });
 
+// TODO: WIP
 // app.all('/graphql', createHandler({ schema }));
 
 // app.use(
@@ -36,13 +39,29 @@ app.get('/api', (req, res) => {
 //   })
 // );
 
-const port = process.env.PORT || 3333;
-const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
-  // console.log(`GraphQL server query at http://localhost:${port}/graphql`);
-  // console.log(`GraphQL server view at http://localhost:${port}/graphql/view`);
+// TODO - Add your own routes here, import from other files, etc.
+app.get('/users', async (req, res) => {
+  const { search } = req.query;
+
+
+  const users = await User.find({
+    where: { name_IN: search },
+  });
+
+  return res.json(users).end();
 });
-server.on('error', console.error);
+
+const port = process.env.PORT || 3333;
+(async () => {
+  const server = await ogm.init().then(() =>
+    app.listen(port, () => {
+      console.log(`Listening at http://localhost:${port}/api`);
+      // console.log(`GraphQL server query at http://localhost:${port}/graphql`);
+      // console.log(`GraphQL server view at http://localhost:${port}/graphql/view`);
+    })
+  );
+  server.on('error', console.error);
+})();
 
 // Start Apollo Server
 
